@@ -1,0 +1,128 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0px;
+    padding: 0px;
+}
+
+.message {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    border-bottom: 1px solid white;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+}
+
+.logo {
+    width: 30px;
+    height: 30px;
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
+.sender-name {
+    font-weight: bold;
+    color: white;
+    margin-left: 10px;
+}
+
+.text {
+    font-family: monospace;
+    color: #d1d1e0;
+    margin-top: 3px;
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+#loading-container {
+    display: flex;
+    align-items: center;
+    /* Add this line */
+    justify-content: center;
+}
+
+.loader {
+    border: 5px solid #f3f3f3;
+    /* Light grey */
+    border-top: 5px solid #3498db;
+    /* Blue */
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+#chat-container {
+    display: flex;
+    flex-direction: column;
+    margin: 20px;
+    overflow: auto;
+    height: calc(100vh - 80px);
+}
+
+#prompt-container {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    margin-bottom: 10px;
+    max-width: calc(100% - 40px);
+    box-sizing: border-box;
+    display: flex;
+}
+
+.custom-search {
+    display: flex;
+    position: relative;
+    width: 100%;
+}
+
+.custom-search-input {
+    flex: 1;
+    width: 100%;
+    background: var(--vscode-list-dropBackground);
+    border: 1px solid var(--vscode-checkbox-border);
+    padding: 10px 60px 10px 10px;
+    line-height: 1;
+    box-sizing: border-box;
+    outline: none;
+    font-size: 14px;
+    color: white
+}
+
+.custom-search-botton {
+    position: absolute;
+    right: 3px;
+    top: 5px;
+    bottom: 5px;
+    border: 0;
+    background: var(--vscode-list-dropBackground);
+    color: var(--vscode-checkbox-border);
+    outline: none;
+    margin: 0;
+    padding: 0 10px;
+    border-radius: 50px;
+    z-index: 2;
+}
+
+.custom-search-botton:hover {
+    background: var(--vacode-list-activeSelectionBackground);
+}
+
+.custom-search-input::placeholder {
+    color: var(--vscode-checkbox-border);
+}

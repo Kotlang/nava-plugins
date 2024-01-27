@@ -91,7 +91,7 @@ export interface components {
       debug_options?: components["schemas"]["DebugOptions"] | null;
     };
     ChatResponse: {
-      id: string;
+      chat_session_id: string;
       response?: string;
       debug_data?: components["schemas"]["DebugData"] | null;
     };

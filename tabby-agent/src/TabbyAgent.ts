@@ -458,7 +458,7 @@ export class TabbyAgent extends EventEmitter implements Agent {
       this.logger.debug({ response }, "Chat response");
       const responseData = response.data;
       chatResponse = {
-        id: responseData.id,
+        chat_session_id: responseData.chat_session_id,
         response: responseData.response ? responseData.response : "",
       };
     } catch (error) {

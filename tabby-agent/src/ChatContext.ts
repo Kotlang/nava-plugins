@@ -8,6 +8,6 @@ export type ChatRequest = {
 }
 
 export type ChatResponse = {
-    id: string;
+    chat_session_id: string;
     response: string;
 }

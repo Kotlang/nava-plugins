@@ -163,9 +163,9 @@
       },
       "ChatResponse": {
         "type": "object",
-        "required": ["id", "reponse"],
+        "required": ["chat_session_id", "reponse"],
         "properties": {
-          "id": { "type": "string" },
+          "chat_session_id": { "type": "string" },
           "response": { "type": "string" },
           "debug_data": { "allOf": [{ "$ref": "#/components/schemas/DebugData" }], "nullable": true }
         }

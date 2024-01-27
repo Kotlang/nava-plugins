@@ -6,25 +6,25 @@ import { agent } from "./agent";
 import { marked } from "marked";
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
-    public static readonly viewType = "nava-assist-view";
-  
-    private _view?: vscode.WebviewView;
-  
-    private _sessionID: string = Date.now().toString();
+  public static readonly viewType = "nava-assist-view";
 
-    constructor(private readonly _extensionUri: vscode.Uri) {}
-  
+  private _view?: vscode.WebviewView;
 
-    public startNewChatSession() {
-      if (this._view) {
-          this._view.webview.postMessage({
-              type: "startNewSession",
-          });
-          this._sessionID = Date.now().toString();
-      }
+  private _sessionID: string | null = null;
+
+  constructor(private readonly _extensionUri: vscode.Uri) { }
+
+
+  public startNewChatSession() {
+    if (this._view) {
+      this._view.webview.postMessage({
+        type: "startNewSession",
+      });
+      this._sessionID = null;
+    }
   }
 
-  private saveChatSession(sessionID: string, newMessages: {sender: string, text: string}[]) {
+  private saveChatSession(sessionID: string, newMessages: { sender: string, text: string }[]) {
     const storagePath = this.getStoragePath();
     const sessions = this.loadChatSessions();
 
@@ -39,36 +39,36 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
     // Save to file
     fs.writeFileSync(storagePath, JSON.stringify(sessions));
-}
+  }
 
-private loadChatSessions(): { [id: string]: any[] } {
-  const storagePath = this.getStoragePath();
-  if (fs.existsSync(storagePath)) {
+  private loadChatSessions(): { [id: string]: any[] } {
+    const storagePath = this.getStoragePath();
+    if (fs.existsSync(storagePath)) {
       return JSON.parse(fs.readFileSync(storagePath, 'utf8'));
-  }
-  return {};
-}
-
-private getStoragePath(): string {
-  const workspaceFolders = vscode.workspace.workspaceFolders;
-  const storageDir = workspaceFolders && workspaceFolders[0]?.uri.fsPath;
-  if (storageDir) {
-    const chatSessionsDir = path.join(storageDir, '.chatSessions');
-    if (!fs.existsSync(chatSessionsDir)) {
-      fs.mkdirSync(chatSessionsDir);
     }
-    return path.join(chatSessionsDir, 'sessions.json');
+    return {};
   }
-  throw new Error('No workspace folders found.');
-}
 
-public async retrieveAndDisplayPreviousSessions() {
-  try {
+  private getStoragePath(): string {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    const storageDir = workspaceFolders && workspaceFolders[0]?.uri.fsPath;
+    if (storageDir) {
+      const chatSessionsDir = path.join(storageDir, '.chatSessions');
+      if (!fs.existsSync(chatSessionsDir)) {
+        fs.mkdirSync(chatSessionsDir);
+      }
+      return path.join(chatSessionsDir, 'sessions.json');
+    }
+    throw new Error('No workspace folders found.');
+  }
+
+  public async retrieveAndDisplayPreviousSessions() {
+    try {
       const sessions = this.loadChatSessions();
       // Convert sessions to QuickPick items
       const items: vscode.QuickPickItem[] = Object.keys(sessions).map(sessionID => {
         const firstUserMessage = sessions[sessionID]?.find(m => m.sender === 'user')?.text || 'No messages';
-        return { label: firstUserMessage, description: sessionID};
+        return { label: firstUserMessage, description: sessionID };
       });
 
       // Show QuickPick
@@ -81,75 +81,85 @@ public async retrieveAndDisplayPreviousSessions() {
           if (this._view) {
             this._view.webview.postMessage({
               type: "displayPreviousSessions",
-              sessions: { messages: sessionMessages}
+              sessions: { messages: sessionMessages }
             });
           }
         }
       }
-  } catch (error) {
+    } catch (error) {
       console.error('Error retrieving previous sessions:', error);
       vscode.window.showErrorMessage("Failed to retrieve previous chat sessions.");
+    }
   }
-}
 
-    public resolveWebviewView(
-      webviewView: vscode.WebviewView,
-    ) {
-      this._view = webviewView;
-      webviewView.webview.options = {
-        enableScripts: true,
-        localResourceRoots: [vscode.Uri.joinPath(this._extensionUri, "assets")],
-      };
-  
-      webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
-      webviewView.webview.onDidReceiveMessage( async (data) => {
-        switch (data.type) {
-          case "prompt": {
-            const activeEditor = vscode.window.activeTextEditor;
-            const document = activeEditor?.document;
-            const selection = activeEditor?.selection;
-            const request: ChatRequest = {
-              chat_session_id: this._sessionID,
-              language: document?.languageId || '',
-              filePath: document?.fileName || '',
-              entireContent: document?.getText() || '',
-              selectedContent: document?.getText(selection) || '',
-              query: data.value,
-            };
+  public resolveWebviewView(
+    webviewView: vscode.WebviewView,
+  ) {
+    this._view = webviewView;
+    webviewView.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [vscode.Uri.joinPath(this._extensionUri, "assets")],
+    };
+
+    webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
+    webviewView.webview.onDidReceiveMessage(async (data) => {
+      switch (data.type) {
+        case "prompt": {
+          const activeEditor = vscode.window.activeTextEditor;
+          const document = activeEditor?.document;
+          const selection = activeEditor?.selection;
+          const request: ChatRequest = {
+            ...(this._sessionID ? { chat_session_id: this._sessionID } : {}),
+            language: document?.languageId || '',
+            filePath: document?.fileName || '',
+            entireContent: document?.getText() || '',
+            selectedContent: document?.getText(selection) || '',
+            query: data.value,
+          };
+          try {
             const result = await agent().chatCompletion(request)
             const parsed_result = marked.parse(result.response)
-            this.saveChatSession(this._sessionID, [
-              {sender: "user", text: data.value},
-              {sender: "ai", text: parsed_result},
-          ]);
             webviewView.webview.postMessage({
               type: "displayMessage",
               text: parsed_result
             });
-            break;
+            if (result.chat_session_id) {
+              this._sessionID = result.chat_session_id;
+              this.saveChatSession(this._sessionID, [
+                { sender: "user", text: data.value },
+                { sender: "ai", text: parsed_result },
+              ]);
+            }
+          } catch (error) {
+            webviewView.webview.postMessage({
+              type: "displayMessage",
+              text: `An error occurred: ${error}`
+            });
           }
+          break;
         }
-      });
-    }
-  
-    private _getHtmlForWebview(webview: vscode.Webview) {
-      const scriptUri = webview.asWebviewUri(
-        vscode.Uri.joinPath(this._extensionUri, "assets", "scripts", "main.js")
-      );
-      const userLogo = webview.asWebviewUri(
-        vscode.Uri.joinPath(this._extensionUri, "assets", "user-logo.png")
-      );
-      const aiLogo = webview.asWebviewUri(
-        vscode.Uri.joinPath(this._extensionUri, "assets", "nava-logo.png")
-      );
-      const cssStyles = webview.asWebviewUri(
-        vscode.Uri.joinPath(this._extensionUri, "assets", "styles.css")
-      );
-      const codeStyles = webview.asWebviewUri(
-        vscode.Uri.joinPath(this._extensionUri, "assets", "code.css")
-      );
-      console.log(userLogo)
-      return `
+      }
+    });
+  }
+
+  private _getHtmlForWebview(webview: vscode.Webview) {
+    const scriptUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, "assets", "scripts", "main.js")
+    );
+    const userLogo = webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, "assets", "user-logo.png")
+    );
+    const aiLogo = webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, "assets", "nava-logo.png")
+    );
+    const cssStyles = webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, "assets", "styles.css")
+    );
+    const codeStyles = webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, "assets", "code.css")
+    );
+    console.log(userLogo)
+    return `
       <!DOCTYPE html>
       <html lang="en">
       
@@ -193,6 +203,5 @@ public async retrieveAndDisplayPreviousSessions() {
       
       </html>
       `;
-    }
   }
-  
+}

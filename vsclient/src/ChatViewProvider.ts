@@ -4,6 +4,7 @@ import * as path from 'path';
 import { ChatRequest } from 'tabby-agent';
 import { agent } from "./agent";
 import { marked } from "marked";
+import * as os from 'os';
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = "nava-assist-view";
@@ -50,8 +51,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
   }
 
   private getStoragePath(): string {
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    const storageDir = workspaceFolders && workspaceFolders[0]?.uri.fsPath;
+    const storageDir =  os.homedir();
     if (storageDir) {
       const chatSessionsDir = path.join(storageDir, '.chatSessions');
       if (!fs.existsSync(chatSessionsDir)) {
@@ -68,16 +68,17 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       // Convert sessions to QuickPick items
       const items: vscode.QuickPickItem[] = Object.keys(sessions).map(sessionID => {
         const firstUserMessage = sessions[sessionID]?.find(m => m.sender === 'user')?.text || 'No messages';
-        return { label: firstUserMessage, description: sessionID };
+        return { label: firstUserMessage, ID: sessionID };
       });
 
       // Show QuickPick
-      const selected = await vscode.window.showQuickPick(items, { placeHolder: 'Choose a chat session' });
+      
+      const selected = await vscode.window.showQuickPick<vscode.QuickPickItem & { ID?: string }>(items, { placeHolder: 'Choose a chat session' });
       if (selected) {
         // Retrieve and display the selected session
-        if (selected.description) {
-          this._sessionID = selected.description;
-          const sessionMessages = sessions[selected.description];
+        if (selected.ID) {
+          this._sessionID = selected.ID;
+          const sessionMessages = sessions[selected.ID];
           if (this._view) {
             this._view.webview.postMessage({
               type: "displayPreviousSessions",
@@ -158,7 +159,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     const codeStyles = webview.asWebviewUri(
       vscode.Uri.joinPath(this._extensionUri, "assets", "code.css")
     );
-    console.log(userLogo)
     return `
       <!DOCTYPE html>
       <html lang="en">

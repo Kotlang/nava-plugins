@@ -2,8 +2,8 @@ import { EventEmitter } from "events";
 import { window, ExtensionContext, Uri, env, workspace, ConfigurationTarget } from "vscode";
 import { agent } from "./agent";
 
-const redirecturi = process.env.REDIRECT_URI || 'vscode://TabbyML.vscode-tabby';
-const providerUri = process.env.PROVIDER_URI || 'http://localhost:5173/signin';
+const redirecturi = process.env.REDIRECT_URI || 'vscode://Navachar.vscode-nava';
+const providerUri = process.env.PROVIDER_URI || 'https://authprovider.navachar.co/signin';
 const clientId = process.env.CLIENT_ID || '1234567890';
 
 const configTarget = ConfigurationTarget.Global;

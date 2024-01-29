@@ -1,8 +1,8 @@
 {
-  "name": "vscode-tabby",
-  "publisher": "TabbyML",
+  "name": "vscode-nava",
+  "publisher": "Navachar",
   "displayName": "Nava",
-  "description": "Tabby is a self-hosted AI coding assistant that can suggest multi-line code or full functions in real-time.",
+  "description": "Nava-assist is a self-hosted AI coding assistant that can suggest multi-line code or full functions in real-time.",
   "license": "Apache-2.0",
   "version": "1.2.0",
   "keywords": [

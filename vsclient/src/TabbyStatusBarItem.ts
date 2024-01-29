@@ -149,7 +149,6 @@ export class TabbyStatusBarItem {
     });
 
     this.authprovider.on("login", () => {
-      console.log("this was called becuase login emmited the event")
       this.refresh();
     })
 
